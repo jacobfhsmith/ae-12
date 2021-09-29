@@ -1,0 +1,241 @@
+---
+title: 'AE 12: Conditional Probability'
+author: "STA199"
+date: "September 29, 2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(warning = FALSE, 
+                      message = FALSE)
+```
+
+## Learning goals 
+
+
+- Define marginal, joint, and conditional probabilities, and calculate each "manually" and in a reproducible way 
+- Identify whether two events are independent 
+- Apply Bayes theorem using the Hypothetical 1000 
+
+## Part 1: Year and major for STA 199 students
+
+```{r load-packages}
+library(tidyverse)
+library(knitr)
+```
+
+```{r load-data}
+sta199 <- read_csv("sta199-fa21-year-major.csv")
+```
+
+For this portion of the AE, we will continue using the data including the year in school and majors for students taking STA 199 in Fall 2021, i.e., you! The data set includes the following variables: 
+
+- `section`: STA 199 section
+- `year`: Year in school
+- `major_category`: Major / academic interest. 
+  - For the purposes of this AE, we'll call this the student's "major". 
+
+## Definitions
+
+- **Marginal probability**: Probability of a single event occurring. Does not depend on another variable.
+
+- **Joint probability**: Probability of two events both occuring at the same time.
+
+- **Conditional probability**: Probability of one event occuring given that another event has occurred.
+
+- **Independent events**: Two events where, if one occurs, it does not affect the probability that another occurs.
+
+
+## Exercise 1
+
+Let's start with the contingency table from the last class: 
+
+```{r pivot-wider}
+sta199 %>% 
+  count(year, major_category) %>%
+   mutate(year = factor(year, levels = c("First-year", "Sophomore", "Junior", "Senior")))%>%
+  arrange(year)%>%
+  pivot_wider(id_cols = c(year, major_category),#how we identify unique obs
+              names_from = major_category, #how we will name the columns
+              values_from = n, #values used for each cell
+              values_fill = 0) %>% #how to fill cells with 0 observations 
+  kable() # neatly display the results
+```
+
+Try to answer the questions below using the contingency table and using code to answer in a reproducible way. 
+
+**Part A:** What is the probability a randomly selected STA 199 student is studying a subject in the "other" major category? 
+
+```{r prob-other-major}
+# add code 
+
+```
+
+
+**Part B**: What is the probability a randomly selected STA 199 student is a first-year? 
+
+```{r ex1-part-b}
+# add code 
+
+```
+
+**Part C**: What is the probability a randomly selected STA 199 student is a first year and is studying a subject in the "other" major category?
+
+```{r ex1-part-c}
+## add code 
+
+```
+
+**Part D**: What is the probability a randomly selected STA 199 student is a first year given they are studying a subject in the "other" major category?
+
+```{r ex1-part-d}
+## add code 
+
+```
+
+**Part E**: What is the probability a randomly selected STA 199 student is studying a subject in the "other" major category given they are a first year?
+
+```{r ex1-part-e} 
+# add code
+
+```
+
+
+**Part F**: Are being a first year and studying a subject in the "other" category independent events? Briefly explain. 
+
+
+## Part 2: Bayes Theorem
+
+### Monty Hall Problem
+
+#### Game set-up and assumptions
+
+This video explains the backstory:
+https://brilliant.org/wiki/monty-hall-problem/.
+
+"Suppose you're on a game show, and you're given the choice of three doors: 
+Behind one door is a car; behind the others, goats. You pick a door, say No. 1, and the host, who knows what's behind the doors, opens another door, say No. 3, which has a goat. He then says to you, "Do you want to pick door No. 2?" Is it to your advantage to switch your choice?"
+
+We will investigate the above decision of whether to switch or not to switch.
+
+Assumptions:
+
+1. The host will always open a door not picked by the contestant.
+
+2. The host will always open a door which reveals a goat (i.e. not a car).
+
+3. The host will always offer the contestant the chance to switch to 
+   another door.
+   
+4. The door behind which the car is placed is chosen at random.
+
+5. The door initially chosen by the contestant is chosen at random.
+
+```{r doors}
+doors <- c(1, 2, 3)
+```
+
+```{r set_up_selection}
+monty_hall <- tibble(
+  car_door = sample(doors, size = 10000, replace = TRUE),
+  my_door = sample(doors, size = 10000, replace = TRUE)
+  )
+monty_hall
+```
+
+```{r monty_door}
+monty_hall <- monty_hall %>% 
+  rowwise() %>% 
+  mutate(monty_door = if_else(car_door == my_door,
+                              sample(doors[-my_door], size = 1),
+                              6 - (car_door + my_door))) %>% 
+  ungroup()
+monty_hall
+
+```
+
+```{r stay_switch_win}
+monty_hall <- monty_hall %>% 
+  mutate(switch_win = car_door != my_door,
+         stay_win   = car_door == my_door)
+monty_hall
+```
+
+```{r estimate_probabilities}
+monty_hall %>% 
+  summarize(switch_win_prob = mean(switch_win),
+            stay_win_prob   = mean(stay_win))
+```
+
+### Backstory
+
+>You blew it, and you blew it big! Since you seem to have difficulty grasping
+the basic principle at work here, I'll explain. After the host reveals a goat, you now have a one-in-two chance of being correct. Whether you change your 
+selection or not, the odds are the same. There is enough mathematical 
+illiteracy in this country, and we don't need the world's highest IQ 
+propagating more. Shame!
+<br><br>
+**Scott Smith, Ph.D.**
+**University of Florida** <br>
+
+>May I suggest that you obtain and refer to a standard textbook on probability before you try to answer a question of this type again?
+<br><br>
+**Charles Reid, Ph.D.**
+**University of Florida** <br> <br>
+These are just two of over 10,000 letters Marilyn vos Savant received in regards to her response of the Monty Hall Problem. What was her response? "Yes; you should switch," she replied. "The first door has a 1/3 chance of winning, 
+but the second door has a 2/3 chance."
+
+Read more about this at 
+https://priceonomics.com/the-time-everyone-corrected-the-worlds-smartest/
+
+## Part 3: Introducing Lab 
+
+## Data 
+
+Our data for the next lab will come from the [General Social Survey](https://gss.norc.org/), a major national survey
+. 
+```{r data, message = F, warning = F}
+gss <- read_csv("gss2018.csv")
+```
+
+1. How many observations are in this dataset? What does each observation represent?
+
+2. By default, R will arrange the categories of a categorical variable in alphabetical order in any output and visualizations, but we want the levels for `indus` and `altenergy` to be in logical order. To achieve this, we will use the `factor()` function to make both of these variables factors (categorical variables with ordering) and specify the levels we wish to use. 
+
+The code to for `indus` is below. Use this code to make `indus` a factor, and write code to make `altenergy` a factor with the levels in the following order: "Don't know", "Too little", "About right", "Too much."  Save your result to the `gss` data frame, so the ordered variables are used throughout the lab. 
+
+```{r eval = F}
+gss <- gss %>%
+  mutate(indus = factor(indus, levels = c("Not dangerous", "Somewhat dangerous", "Very dangerous", "Extremely dangerous")))
+```
+
+3. Before looking at the relationship between feelings on impact of industrial air pollution to environment and government spending on alternative energy sources, we'll look at the distribution of each variable individually.
+
+Make a bar plot to examine the distribution of `indus`. In general, how do survey respondents feel about the impact of industrial air pollution? Write 1 - 2 observations from the visualization to support your response. 
+
+```{r ex-3}
+
+```
+
+4. Make a bar plot to examine the distribution of `altenergy`. In general, how do survey respondents feel about the amount the US government is spending on alternative energy sources? Write 1 - 2 observations from the visualization to support your response. 
+
+```{r ex-4}
+
+```
+
+5. What would you expect the relationship between feelings on impact of industrial air pollution to environment and government spending on alternative energy sources to be? 
+
+
+
+
+
+
+<hr> 
+
+## Resources 
+
+- Notes on `pivot_wider` and `pivot_longer`
+  - [Click here](https://rstudio-education.github.io/datascience-box/course-materials/slides/u2-d09-tidying/u2-d09-tidying.html#1) for slides
+  - [Click here](https://www.youtube.com/watch?v=x3KM5uxaFdI) for video
